@@ -11,7 +11,6 @@ from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
 from aiogram.exceptions import TelegramAPIError
 
-# ================== НАЛАШТУВАННЯ ==================
 # Беремо змінні з оточення (Render їх підставить)
 TOKEN = os.environ.get("BOT_TOKEN")
 ADMIN_ID = int(os.environ.get("ADMIN_ID", 0))
@@ -22,7 +21,6 @@ PORTFOLIO_LINK = os.environ.get("PORTFOLIO_LINK")
 if not all([TOKEN, ADMIN_ID, YOUR_USERNAME, PORTFOLIO_LINK]):
     raise ValueError("❌ Відсутні обов'язкові змінні оточення!")
 
-# Налаштування логування
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -32,7 +30,6 @@ logger = logging.getLogger(__name__)
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# ================== БАЗА ДАНИХ ==================
 class Database:
     def __init__(self, db_name="bot.db"):
         self.conn = sqlite3.connect(db_name)
@@ -89,7 +86,6 @@ class Database:
 
 db = Database()
 
-# ================== FSM СТАНИ ==================
 class OrderBot(StatesGroup):
     name = State()
     contact = State()
@@ -97,7 +93,6 @@ class OrderBot(StatesGroup):
     budget = State()
     confirm = State()
 
-# ================== КНОПКИ ==================
 main_kb = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="🤖 Замовити бота")],
@@ -118,7 +113,6 @@ cancel_kb = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
-# ================== СТАРТ ==================
 @dp.message(Command("start"))
 async def start(message: types.Message):
     db.register_user(
@@ -135,7 +129,6 @@ async def start(message: types.Message):
     )
     logger.info(f"Користувач {message.from_user.id} запустив бота")
 
-# ================== СКАСУВАННЯ ==================
 @dp.message(F.text == "❌ Скасувати замовлення")
 async def cancel_order(message: types.Message, state: FSMContext):
     current_state = await state.get_state()
@@ -149,7 +142,6 @@ async def cancel_order(message: types.Message, state: FSMContext):
     else:
         await message.answer("У вас немає активних замовлень.", reply_markup=main_kb)
 
-# ================== ПРИКЛАДИ РОБІТ ==================
 @dp.message(F.text == "💼 Приклади робіт")
 async def works(message: types.Message, state: FSMContext):
     current_state = await state.get_state()
@@ -217,7 +209,6 @@ async def back_to_examples(callback: types.CallbackQuery):
     )
     await callback.answer()
 
-# ================== ЦІНИ ==================
 @dp.message(F.text == "💰 Ціни")
 async def price(message: types.Message, state: FSMContext):
     current_state = await state.get_state()
@@ -239,7 +230,6 @@ async def price(message: types.Message, state: FSMContext):
         parse_mode="Markdown"
     )
 
-# ================== ЗАМОВЛЕННЯ ==================
 @dp.message(F.text == "🤖 Замовити бота")
 async def order_start(message: types.Message, state: FSMContext):
     current_state = await state.get_state()
@@ -417,7 +407,6 @@ async def order_from_example(callback: types.CallbackQuery, state: FSMContext):
     await order_start(callback.message, state)
     await callback.answer()
 
-# ================== ПРО НАС ==================
 @dp.message(F.text == "ℹ️ Про нас")
 async def about(message: types.Message, state: FSMContext):
     current_state = await state.get_state()
@@ -431,7 +420,6 @@ async def about(message: types.Message, state: FSMContext):
         reply_markup=back_kb
     )
 
-# ================== КОНТАКТИ ==================
 @dp.message(F.text == "📞 Контакти")
 async def contact(message: types.Message, state: FSMContext):
     current_state = await state.get_state()
@@ -449,7 +437,6 @@ async def contact(message: types.Message, state: FSMContext):
         reply_markup=contact_kb
     )
 
-# ================== МОЇ ЗАМОВЛЕННЯ ==================
 @dp.message(F.text == "📊 Мої замовлення")
 async def my_orders(message: types.Message):
     orders = db.get_user_orders(message.from_user.id)
@@ -464,7 +451,6 @@ async def my_orders(message: types.Message):
     
     await message.answer(orders_text, parse_mode="Markdown")
 
-# ================== ПОВЕРНЕННЯ ==================
 @dp.message(F.text == "⬅️ Повернутись назад")
 async def go_back(message: types.Message, state: FSMContext):
     current_state = await state.get_state()
@@ -473,7 +459,6 @@ async def go_back(message: types.Message, state: FSMContext):
     else:
         await message.answer("⬅️ Головне меню", reply_markup=main_kb)
 
-# ================== НЕВІДОМІ КОМАНДИ ==================
 @dp.message()
 async def unknown(message: types.Message):
     if message.text not in ["🤖 Замовити бота", "💼 Приклади робіт", "💰 Ціни", 
@@ -481,7 +466,6 @@ async def unknown(message: types.Message):
                            "❌ Скасувати замовлення", "📊 Мої замовлення"]:
         await message.answer("❓ Невідома команда. Скористайтесь кнопками 👇", reply_markup=main_kb)
 
-# ================== ЗАПУСК ==================
 async def main():
     try:
         logger.info("🚀 Бот запускається...")
